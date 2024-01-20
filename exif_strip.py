@@ -2,10 +2,17 @@ from PIL import Image, ExifTags
 import os
 import csv
 import argparse
+from pyproj import Proj, transform
 
 def dms_to_decimal(degrees, minutes, seconds):
     decimal_degrees = degrees + (minutes / 60.0) + (seconds / 3600.0)
     return decimal_degrees
+
+def wgs84_to_bng(lon, lat):
+    wgs84 = Proj(init='epsg:4326')
+    bng = Proj(init='epsg:27700')
+    bng_lon, bng_lat = transform(wgs84, bng, lon, lat)
+    return bng_lon, bng_lat
 
 def main():
 
@@ -13,6 +20,7 @@ def main():
     
     parser.add_argument('--i', help="Input folder path", required=True)
     parser.add_argument('--o', help="Output folder path", required=True)
+    parser.add_argument('--bng', help="Converts coordinates to British National Grid", action='store_true')
 
 
     args = parser.parse_args()
@@ -61,6 +69,9 @@ def main():
                                 if longitude_ref.upper() == 'W':
                                     longitude = -longitude
                             
+                            if args.bng:
+                                longitude, latitude = wgs84_to_bng(longitude, latitude)
+
                             csv_writer.writerow([file, latitude, longitude, altitude, direction, exif_data[306]])    
 
                         else:
